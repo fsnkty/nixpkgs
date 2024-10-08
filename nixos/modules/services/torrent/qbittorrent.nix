@@ -119,8 +119,8 @@ in
             mode = "700";
             inherit (cfg) user group;
           };
-          "${cfg.profileDir}/qBittorrent/config/qBittorrent.conf"."L+" = {
-            mode = "1500";
+          "${cfg.profileDir}/qBittorrent/config/qBittorrent.conf"."L+" = lib.mkIf (cfg.serverConfig != null) {
+            mode = "1400";
             inherit (cfg) user group;
             argument = "${pkgs.writeText "qBittorrent.conf" (gendeepINI cfg.serverConfig)}";
           };
