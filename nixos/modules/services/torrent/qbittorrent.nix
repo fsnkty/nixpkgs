@@ -46,6 +46,7 @@ let
       else
         mkKeyValueDefault { } sep k v;
   };
+  configFile = pkgs.writeText "qBittorrent.conf" (gendeepINI cfg.serverConfig);
 in
 {
   options.services.qbittorrent = {
@@ -75,16 +76,18 @@ in
 
     webuiPort = mkOption {
       default = 8080;
-      type = port;
+      type = nullOr port;
       description = "the port passed to qbittorrent via `--webui-port`";
     };
 
     torrentingPort = mkOption {
+      default = null;
       type = nullOr port;
       description = "the port passed to qbittorrent via `--torrenting-port`";
     };
 
     serverConfig = mkOption {
+      default = null;
       type = unspecified;
       description = ''
         Free-form settings mapped to the `qBittorrent.conf` file in the profile.
@@ -105,6 +108,17 @@ in
         }
       '';
     };
+
+    extraArgs = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = ''
+        Extra arguments passed to qbittorrent. See `qbittorrent -h`, or the [source code](https://github.com/qbittorrent/qBittorrent/blob/master/src/app/cmdoptions.cpp), for the available arguments.
+      '';
+      example = [
+        "--confirm-legal-notice"
+      ];
+    };
   };
   config = lib.mkIf cfg.enable {
     systemd = {
@@ -118,10 +132,10 @@ in
             mode = "700";
             inherit (cfg) user group;
           };
-          "${cfg.profileDir}/qBittorrent/config/qBittorrent.conf"."L+" = {
-            mode = "1500";
+          "${cfg.profileDir}/qBittorrent/config/qBittorrent.conf"."L+" = lib.mkIf (cfg.serverConfig != null) {
+            mode = "1400";
             inherit (cfg) user group;
-            argument = "${pkgs.writeText "qBittorrent.conf" (gendeepINI cfg.serverConfig)}";
+            argument = "${configFile}";
           };
         };
       };
@@ -134,6 +148,7 @@ in
           "nss-lookup.target"
         ];
         wantedBy = [ "multi-user.target" ];
+        restartTriggers = lib.optional (cfg.serverConfig != null) configFile;
 
         serviceConfig = {
           Type = "simple";
@@ -143,9 +158,10 @@ in
             [
               (getExe cfg.package)
               "--profile=${cfg.profileDir}"
-              "--webui-port=${toString cfg.webuiPort}"
             ]
+            ++ lib.optional (cfg.webuiPort != null) "--webui-port=${toString cfg.webuiPort}"
             ++ lib.optional (cfg.torrentingPort != null) "--torrenting-port=${toString cfg.torrentingPort}"
+            ++ cfg.extraArgs
           );
           TimeoutStopSec = 1800;
 
@@ -195,7 +211,8 @@ in
     };
 
     networking.firewall.allowedTCPPorts = mkIf cfg.openFirewall (
-      [ cfg.webuiPort ] ++ lib.optional (cfg.torrentingPort != null) cfg.torrentingPort
+      lib.optional (cfg.webuiPort != null) cfg.webuiPort
+      ++ lib.optional (cfg.torrentingPort != null) cfg.torrentingPort
     );
   };
   meta.maintainers = with maintainers; [ fsnkty ];
