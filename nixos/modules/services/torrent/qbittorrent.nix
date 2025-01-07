@@ -86,6 +86,7 @@ in
     };
 
     serverConfig = mkOption {
+      default = null;
       type = unspecified;
       description = ''
         Free-form settings mapped to the `qBittorrent.conf` file in the profile.
