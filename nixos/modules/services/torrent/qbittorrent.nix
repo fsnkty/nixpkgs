@@ -107,6 +107,17 @@ in
         }
       '';
     };
+
+    extraArgs = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = ''
+        Extra arguments passed to qbittorrent. See `qbittorrent -h`, or the [source code](https://github.com/qbittorrent/qBittorrent/blob/master/src/app/cmdoptions.cpp), for the available arguments.
+      '';
+      example = [
+        "--confirm-legal-notice"
+      ];
+    };
   };
   config = lib.mkIf cfg.enable {
     systemd = {
@@ -148,6 +159,7 @@ in
               "--webui-port=${toString cfg.webuiPort}"
             ]
             ++ lib.optional (cfg.torrentingPort != null) "--torrenting-port=${toString cfg.torrentingPort}"
+            ++ cfg.extraArgs
           );
           TimeoutStopSec = 1800;
 

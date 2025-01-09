@@ -20,6 +20,9 @@ import ./make-test-python.nix ({pkgs, ...}: {
             General.Locale = "en";
           };
         };
+        # torrenting-port can also be set through the torrentingPort module option.
+        # We set it this way to make it easy to test extraArgs
+        extraArgs = [ "--torrenting-port=55555" ];
       };
     };
   };
@@ -33,6 +36,7 @@ import ./make-test-python.nix ({pkgs, ...}: {
 
     declarative.wait_for_unit("qbittorrent.service")
     declarative.wait_for_open_port(8181)
+    declarative.wait_for_open_port(55555)
     declarative.wait_for_console_text("The WebUI administrator username is: user")
     declarative.wait_until_succeeds("curl --fail http://localhost:8181")
     simple.wait_until_succeeds("curl --fail http://declarative:8181")
