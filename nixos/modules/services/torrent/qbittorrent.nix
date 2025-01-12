@@ -46,6 +46,7 @@ let
       else
         mkKeyValueDefault { } sep k v;
   };
+  configFile = pkgs.writeText "qBittorrent.conf" (gendeepINI cfg.serverConfig);
 in
 {
   options.services.qbittorrent = {
@@ -134,7 +135,7 @@ in
           "${cfg.profileDir}/qBittorrent/config/qBittorrent.conf"."L+" = lib.mkIf (cfg.serverConfig != null) {
             mode = "1400";
             inherit (cfg) user group;
-            argument = "${pkgs.writeText "qBittorrent.conf" (gendeepINI cfg.serverConfig)}";
+            argument = "${configFile}";
           };
         };
       };
@@ -147,6 +148,7 @@ in
           "nss-lookup.target"
         ];
         wantedBy = [ "multi-user.target" ];
+        restartTriggers = lib.optional (cfg.serverConfig != null) configFile;
 
         serviceConfig = {
           Type = "simple";
