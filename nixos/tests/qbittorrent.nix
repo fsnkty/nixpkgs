@@ -36,7 +36,8 @@ import ./make-test-python.nix ({pkgs, ...}: {
   };
 
   testScript = ''
-    start_all()
+    simple.start(allow_reboot=True)
+    declarative.start(allow_reboot=True)
 
 
     def test_webui(machine, port):
@@ -103,8 +104,7 @@ import ./make-test-python.nix ({pkgs, ...}: {
     ## As webuiPort is passed as an cli it should reset after reboot
     ## As torrentingPort is not passed as an cli it should not reset after
     ## reboot
-    simple.shutdown()
-    simple.start()
+    simple.reboot()
     test_webui(simple, 8080)
     simple.wait_for_open_port(33333)
 
@@ -127,8 +127,7 @@ import ./make-test-python.nix ({pkgs, ...}: {
     ## The generated qBittorrent.conf is, apparently, reapplied after reboot.
     ## Because the port is set in `serverConfig` this overrides the manually
     ## set port.
-    declarative.shutdown()
-    declarative.start()
+    declarative.reboot()
     test_webui(declarative, 8181)
   '';
 })
