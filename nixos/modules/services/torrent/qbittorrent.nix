@@ -75,7 +75,7 @@ in
 
     webuiPort = mkOption {
       default = 8080;
-      type = port;
+      type = nullOr port;
       description = "the port passed to qbittorrent via `--webui-port`";
     };
 
@@ -156,8 +156,8 @@ in
             [
               (getExe cfg.package)
               "--profile=${cfg.profileDir}"
-              "--webui-port=${toString cfg.webuiPort}"
             ]
+            ++ lib.optional (cfg.webuiPort != null) "--webui-port=${toString cfg.webuiPort}"
             ++ lib.optional (cfg.torrentingPort != null) "--torrenting-port=${toString cfg.torrentingPort}"
             ++ cfg.extraArgs
           );
@@ -209,7 +209,8 @@ in
     };
 
     networking.firewall.allowedTCPPorts = mkIf cfg.openFirewall (
-      [ cfg.webuiPort ] ++ lib.optional (cfg.torrentingPort != null) cfg.torrentingPort
+      lib.optional (cfg.webuiPort != null) cfg.webuiPort
+      ++ lib.optional (cfg.torrentingPort != null) cfg.torrentingPort
     );
   };
   meta.maintainers = with maintainers; [ fsnkty ];
